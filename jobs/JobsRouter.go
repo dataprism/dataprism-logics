@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.org/dataprism/dataprism-kfunc/utils"
-	"io/ioutil"
-	"encoding/json"
 )
 
 type JobsRouter struct {

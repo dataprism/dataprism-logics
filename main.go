@@ -4,6 +4,7 @@ import (
 	"github.org/dataprism/dataprism-kfunc/api"
 	"github.org/dataprism/dataprism-kfunc/logics"
 	consul "github.com/hashicorp/consul/api"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -11,14 +12,25 @@ func main() {
 
 	client, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {
-		panic(err)
+		logrus.Error(err)
 	}
 
 	// -- Profile Providers
 	logicsManager := logics.NewManager(client.KV())
 	logicsRouter := logics.NewRouter(logicsManager)
-	API.RegisterSecureGet("/v1/logics", logicsRouter.ListLogics)
-	API.RegisterSecureGet("/v1/logics/{id}", logicsRouter.GetLogic)
-	API.RegisterSecurePost("/v1/logics", logicsRouter.SetLogic)
-	API.RegisterSecureDelete("/v1/logics/{id}", logicsRouter.RemoveLogic)
+	API.RegisterGet("/v1/logics", logicsRouter.ListLogics)
+	API.RegisterGet("/v1/logics/{id}", logicsRouter.GetLogic)
+	API.RegisterGet("/v1/logics/{id}/versions", logicsRouter.ListLogicVersions)
+	API.RegisterGet("/v1/logics/{id}/versions/{version}", logicsRouter.GetLogicVersion)
+
+	API.RegisterPost("/v1/logics", logicsRouter.SetLogic)
+	API.RegisterPost("/v1/logics/{id}/versions", logicsRouter.SetLogicVersion)
+
+	API.RegisterDelete("/v1/logics/{id}", logicsRouter.RemoveLogic)
+	API.RegisterDelete("/v1/logics/{id}/versions/{version}", logicsRouter.RemoveLogicVersion)
+
+	err = API.Start()
+	if err != nil {
+		logrus.Error(err)
+	}
 }
