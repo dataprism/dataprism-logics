@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"flag"
 	"github.org/dataprism/dataprism-kfunc/evals"
+	"github.org/dataprism/dataprism-kfunc/nodes"
 )
 
 func main() {
@@ -49,6 +50,12 @@ func main() {
 	evaluationRouter := evals.NewRouter(evaluationManager)
 	API.RegisterGet("/v1/evaluations/{id}", evaluationRouter.Get)
 	API.RegisterGet("/v1/evaluations/{id}/events", evaluationRouter.Events)
+
+	nodeManager := nodes.NewManager(nomadClient)
+	nodeRouter := nodes.NewRouter(nodeManager)
+	API.RegisterGet("/v1/nodes", nodeRouter.List)
+	API.RegisterGet("/v1/nodes/{id}", nodeRouter.Get)
+
 
 	err = API.Start()
 	if err != nil {

@@ -9,12 +9,12 @@ type EvaluationManager struct {
 }
 
 type JobListResult struct {
-	Id string
-	Name string
-	Priority int
-	Status string
-	StatusDescription string
-	SubmitTime int64
+	Id string `json:"id"`
+	Name string `json:"name"`
+	Priority int `json:"priority"`
+	Status string `json:"status"`
+	StatusDescription string `json:"statusDescription"`
+	SubmitTime int64 `json:"timestamp"`
 }
 
 func NewManager(nomadClient *nomad.Client) *EvaluationManager {
