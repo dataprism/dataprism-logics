@@ -145,3 +145,18 @@ func (router *LogicsRouter) Schedule(w http.ResponseWriter, r *http.Request) {
 	evalId, err := router.manager.Schedule(r.Context(), id, version)
 	utils.HandleResponse(w, evalId, err)
 }
+
+func (router *LogicsRouter) Unschedule(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	strVersion := vars["version"]
+
+	version, err := strconv.Atoi(strVersion)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	evalId, err := router.manager.Unschedule(r.Context(), id, version)
+	utils.HandleResponse(w, evalId, err)
+}

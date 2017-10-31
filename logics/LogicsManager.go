@@ -196,13 +196,31 @@ func (m *LogicsManager) SetLogicVersion(ctx context.Context, logicId string, log
 }
 
 func (m *LogicsManager) RemoveLogic(ctx context.Context, id string) (error) {
-	_, err := m.client.Delete("logics/" + id, &consul.WriteOptions{})
+	list, err := m.ListLogicVersions(ctx, id)
+
+	for _, v := range list {
+		if err = m.RemoveLogicVersion(ctx, id, v); err != nil {
+			return err;
+		}
+	}
+
+	_, err = m.client.DeleteTree("logics/" + id, &consul.WriteOptions{})
 
 	return err
 }
 
 func (m *LogicsManager) RemoveLogicVersion(ctx context.Context, id string, version int) (error) {
-	_, err := m.client.Delete("logics/" + id + "/versions/" + strconv.Itoa(version), &consul.WriteOptions{})
+	list, _, err := m.nomadClient.Jobs().PrefixList(id + "_" + strconv.Itoa(version))
+	if err != nil {
+		return err
+	}
+
+	if list != nil && len(list) == 1 {
+		if _, err = m.Unschedule(ctx, id, version); err != nil {
+			return err
+		}
+	}
+	_, err = m.client.Delete("logics/" + id + "/versions/" + strconv.Itoa(version), &consul.WriteOptions{})
 
 	return err
 }
@@ -219,4 +237,8 @@ func (m *LogicsManager) Schedule(ctx context.Context, id string, version int) (*
 	}
 
 	return m.scheduler.Schedule(logic, logicVersion)
+}
+
+func (m *LogicsManager) Unschedule(ctx context.Context, id string, version int) (*UnscheduleResponse, error) {
+	return m.scheduler.Unschedule(id, version)
 }

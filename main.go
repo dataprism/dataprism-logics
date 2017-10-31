@@ -39,6 +39,7 @@ func main() {
 	API.RegisterGet("/v1/logics/{id}/versions/{version}", logicsRouter.GetLogicVersion)
 
 	API.RegisterPost("/v1/logics/{id}/versions/{version}/schedule", logicsRouter.Schedule)
+	API.RegisterDelete("/v1/logics/{id}/versions/{version}/schedule", logicsRouter.Unschedule)
 
 	API.RegisterPost("/v1/logics", logicsRouter.SetLogic)
 	API.RegisterPost("/v1/logics/{id}/versions", logicsRouter.SetLogicVersion)

@@ -2,6 +2,7 @@ package evals
 
 import (
 	nomad "github.com/hashicorp/nomad/api"
+	"strings"
 )
 
 type EvaluationManager struct {
@@ -38,7 +39,8 @@ func (m *EvaluationManager) Get(evaluationId string) (*Evaluation, error) {
 		Id:       eval.ID,
 		Status:   eval.Status,
 		Priority: eval.Priority,
-		LogicId:  eval.JobID,
+		LogicId:  eval.JobID[:strings.LastIndex(eval.JobID, "_")],
+		LogicVersion: eval.JobID[strings.LastIndex(eval.JobID, "_") + 1:],
 	}, nil
 }
 
@@ -52,14 +54,15 @@ func (m *EvaluationManager) Events(evaluationId string) (map[string]NodeAllocati
 	result := make(map[string]NodeAllocationState)
 	for _, v := range list {
 		res := NodeAllocationState{
-			LogicId: v.JobID,
+			LogicId:  v.JobID[:strings.LastIndex(v.JobID, "_")],
+			LogicVersion: v.JobID[strings.LastIndex(v.JobID, "_") + 1:],
 			ActualStatus: v.ClientStatus,
 			DesiredStatus: v.DesiredStatus,
 			AllocationId: v.ID,
 			NodeId: v.NodeID,
 		}
 
-		state := v.TaskStates[v.JobID + "_logic"]
+		state := v.TaskStates[res.LogicId + "_logic"]
 
 		for _, e := range state.Events {
 			t := &Trace{Type: e.Type, Timestamp: e.Time}
