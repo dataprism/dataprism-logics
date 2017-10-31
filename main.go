@@ -21,6 +21,7 @@ func main() {
 	API.RegisterGet("/v1/logics", logicsRouter.ListLogics)
 	API.RegisterGet("/v1/logics/{id}", logicsRouter.GetLogic)
 	API.RegisterGet("/v1/logics/{id}/versions", logicsRouter.ListLogicVersions)
+	API.RegisterGet("/v1/logics/{id}/versions/latest", logicsRouter.GetLatestLogicVersion)
 	API.RegisterGet("/v1/logics/{id}/versions/{version}", logicsRouter.GetLogicVersion)
 
 	API.RegisterPost("/v1/logics", logicsRouter.SetLogic)

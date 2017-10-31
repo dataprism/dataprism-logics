@@ -89,6 +89,23 @@ func (m *LogicsManager) GetLogic(ctx context.Context, id string) (*Logic, error)
 	return &logic, nil
 }
 
+func (m *LogicsManager) GetLatestLogicVersion(ctx context.Context, id string) (*LogicVersion, error) {
+	// -- determine the next logic version
+	list, err :=  m.ListLogicVersions(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	latest := 0;
+	for _, e := range list {
+		if latest < e {
+			latest = e
+		}
+	}
+
+	return m.GetLogicVersion(ctx, id, latest)
+}
+
 func (m *LogicsManager) GetLogicVersion(ctx context.Context, id string, version int) (*LogicVersion, error) {
 	data, _, err := m.client.Get("logics/" + id + "/versions/" + strconv.Itoa(version), &consul.QueryOptions{})
 	if err != nil {

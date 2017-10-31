@@ -53,6 +53,14 @@ func (router *LogicsRouter) GetLogicVersion(w http.ResponseWriter, r *http.Reque
 	utils.HandleResponse(w, intents, err)
 }
 
+func (router *LogicsRouter) GetLatestLogicVersion(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	intents, err := router.manager.GetLatestLogicVersion(r.Context(), id)
+	utils.HandleResponse(w, intents, err)
+}
+
 func (router *LogicsRouter) SetLogic(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
