@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"strings"
 	"strconv"
+	nomad "github.com/hashicorp/nomad/api"
 )
 
 type LogicsManager struct {
 	client *consul.KV
+	scheduler *Scheduler
+	nomadClient *nomad.Client
 }
 
-func NewManager(client *consul.KV) *LogicsManager {
-	return &LogicsManager{client: client}
+func NewManager(client *consul.KV, nomadClient *nomad.Client, scheduler *Scheduler) *LogicsManager {
+	return &LogicsManager{client: client, nomadClient: nomadClient, scheduler:scheduler}
 }
 
 func (m *LogicsManager) ListLogics(ctx context.Context) ([]string, error) {
@@ -87,6 +90,24 @@ func (m *LogicsManager) GetLogic(ctx context.Context, id string) (*Logic, error)
 	}
 
 	return &logic, nil
+}
+
+func (m *LogicsManager) GetLogicStatus(ctx context.Context, id string) (*LogicStatus, error) {
+	summary, _, err := m.nomadClient.Jobs().Summary(id, &nomad.QueryOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	tgSummary := summary.Summary["logics"]
+
+	return &LogicStatus{
+		Complete: tgSummary.Complete,
+		Failed: tgSummary.Failed,
+		Lost: tgSummary.Lost,
+		Queued: tgSummary.Queued,
+		Running: tgSummary.Running,
+		Starting: tgSummary.Starting,
+	}, nil
 }
 
 func (m *LogicsManager) GetLatestLogicVersion(ctx context.Context, id string) (*LogicVersion, error) {
@@ -184,4 +205,18 @@ func (m *LogicsManager) RemoveLogicVersion(ctx context.Context, id string, versi
 	_, err := m.client.Delete("logics/" + id + "/versions/" + strconv.Itoa(version), &consul.WriteOptions{})
 
 	return err
+}
+
+func (m *LogicsManager) Schedule(ctx context.Context, id string, version int) (*ScheduleResponse, error) {
+	logic, err := m.GetLogic(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	logicVersion, err := m.GetLogicVersion(ctx, id, version)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.scheduler.Schedule(logic, logicVersion)
 }

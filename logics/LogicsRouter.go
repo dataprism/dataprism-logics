@@ -18,24 +18,32 @@ func NewRouter(profileProviderManager *LogicsManager) (*LogicsRouter) {
 }
 
 func (router *LogicsRouter) ListLogics(w http.ResponseWriter, r *http.Request) {
-	intents, err := router.manager.ListLogics(r.Context())
-	utils.HandleResponse(w, intents, err)
+	resp, err := router.manager.ListLogics(r.Context())
+	utils.HandleResponse(w, resp, err)
 }
 
 func (router *LogicsRouter) ListLogicVersions(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	intents, err := router.manager.ListLogicVersions(r.Context(), id)
-	utils.HandleResponse(w, intents, err)
+	resp, err := router.manager.ListLogicVersions(r.Context(), id)
+	utils.HandleResponse(w, resp, err)
 }
 
 func (router *LogicsRouter) GetLogic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	intents, err := router.manager.GetLogic(r.Context(), id)
-	utils.HandleResponse(w, intents, err)
+	resp, err := router.manager.GetLogic(r.Context(), id)
+	utils.HandleResponse(w, resp, err)
+}
+
+func (router *LogicsRouter) GetLogicStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	resp, err := router.manager.GetLogicStatus(r.Context(), id)
+	utils.HandleResponse(w, resp, err)
 }
 
 func (router *LogicsRouter) GetLogicVersion(w http.ResponseWriter, r *http.Request) {
@@ -49,16 +57,16 @@ func (router *LogicsRouter) GetLogicVersion(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	intents, err := router.manager.GetLogicVersion(r.Context(), id, version)
-	utils.HandleResponse(w, intents, err)
+	resp, err := router.manager.GetLogicVersion(r.Context(), id, version)
+	utils.HandleResponse(w, resp, err)
 }
 
 func (router *LogicsRouter) GetLatestLogicVersion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	intents, err := router.manager.GetLatestLogicVersion(r.Context(), id)
-	utils.HandleResponse(w, intents, err)
+	resp, err := router.manager.GetLatestLogicVersion(r.Context(), id)
+	utils.HandleResponse(w, resp, err)
 }
 
 func (router *LogicsRouter) SetLogic(w http.ResponseWriter, r *http.Request) {
@@ -121,4 +129,19 @@ func (router *LogicsRouter) RemoveLogicVersion(w http.ResponseWriter, r *http.Re
 
 	err = router.manager.RemoveLogicVersion(r.Context(), id, version)
 	utils.HandleStatus(w, 200, "Deleted", err)
+}
+
+func (router *LogicsRouter) Schedule(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	strVersion := vars["version"]
+
+	version, err := strconv.Atoi(strVersion)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	evalId, err := router.manager.Schedule(r.Context(), id, version)
+	utils.HandleResponse(w, evalId, err)
 }
