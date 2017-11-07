@@ -3,7 +3,7 @@ package nodes
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	"github.org/dataprism/dataprism-kfunc/utils"
+	"../utils"
 )
 
 type NodeRouter struct {

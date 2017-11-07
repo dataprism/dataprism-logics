@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bitbucket.org/nowyu/nowyu-core/utils"
 	"net/http"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -47,18 +46,6 @@ func (a *Rest) RegisterGet(path string, h func(w http.ResponseWriter, r *http.Re
 		Handler(http.HandlerFunc(h))
 }
 
-func (a *Rest) RegisterSecureGet(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Route {
-	log.WithFields(log.Fields{
-		"method": "GET",
-		"secured": true,
-	}).Info(path)
-
-	return a.router.
-		Path(path).
-		Methods("GET").
-		Handler(utils.CheckJwt(http.HandlerFunc(h)))
-}
-
 // == POST ====================================================================
 
 func (a *Rest) RegisterPost(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Route {
@@ -71,18 +58,6 @@ func (a *Rest) RegisterPost(path string, h func(w http.ResponseWriter, r *http.R
 		Path(path).
 		Methods("POST").
 		Handler(http.HandlerFunc(h))
-}
-
-func (a *Rest) RegisterSecurePost(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Route {
-	log.WithFields(log.Fields{
-		"method": "POST",
-		"secured": true,
-	}).Info(path)
-
-	return a.router.
-		Path(path).
-		Methods("POST").
-		Handler(utils.CheckJwt(http.HandlerFunc(h)))
 }
 
 // == PUT =====================================================================
@@ -99,18 +74,6 @@ func (a *Rest) RegisterPut(path string, h func(w http.ResponseWriter, r *http.Re
 		Handler(http.HandlerFunc(h))
 }
 
-func (a *Rest) RegisterSecurePut(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Route {
-	log.WithFields(log.Fields{
-		"method": "PUT",
-		"secured": true,
-	}).Info(path)
-
-	return a.router.
-		Path(path).
-		Methods("PUT").
-		Handler(utils.CheckJwt(http.HandlerFunc(h)))
-}
-
 // == DELETE ==================================================================
 
 func (a *Rest) RegisterDelete(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Route {
@@ -123,16 +86,4 @@ func (a *Rest) RegisterDelete(path string, h func(w http.ResponseWriter, r *http
 		Path(path).
 		Methods("DELETE").
 		Handler(http.HandlerFunc(h))
-}
-
-func (a *Rest) RegisterSecureDelete(path string, h func(w http.ResponseWriter, r *http.Request)) *mux.Route {
-	log.WithFields(log.Fields{
-		"method": "DELETE",
-		"secured": true,
-	}).Info(path)
-
-	return a.router.
-		Path(path).
-		Methods("DELETE").
-		Handler(utils.CheckJwt(http.HandlerFunc(h)))
 }
