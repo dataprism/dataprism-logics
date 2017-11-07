@@ -9,12 +9,14 @@ import (
 	"flag"
 	"github.org/dataprism/dataprism-kfunc/evals"
 	"github.org/dataprism/dataprism-kfunc/nodes"
+	"strconv"
 )
 
 func main() {
 	var jobsDir = flag.String("d", "/tmp", "the directory where job information will be stored")
+	var port = flag.Int("p", 6300, "the port of the dataprism rest api")
 
-	API := api.CreateAPI("0.0.0.0:8080")
+	API := api.CreateAPI("0.0.0.0:" + strconv.Itoa(*port))
 
 	client, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {
