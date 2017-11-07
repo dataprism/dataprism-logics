@@ -1,20 +1,20 @@
 package main
 
 import (
-	"github.com/dataprism/dataprism-kfunc/api"
-	"github.com/dataprism/dataprism-kfunc/logics"
+	"github.com/dataprism/dataprism-logics/api"
+	"github.com/dataprism/dataprism-logics/logics"
 	consul "github.com/hashicorp/consul/api"
 	nomad "github.com/hashicorp/nomad/api"
 	"github.com/sirupsen/logrus"
 	"flag"
-	"github.com/dataprism/dataprism-kfunc/evals"
-	"github.com/dataprism/dataprism-kfunc/nodes"
+	"github.com/dataprism/dataprism-logics/evals"
+	"github.com/dataprism/dataprism-logics/nodes"
 	"strconv"
 )
 
 func main() {
 	var jobsDir = flag.String("d", "/tmp", "the directory where job information will be stored")
-	var port = flag.Int("p", 6300, "the port of the dataprism rest api")
+	var port = flag.Int("p", 6300, "the port of the dataprism logics rest api")
 
 	API := api.CreateAPI("0.0.0.0:" + strconv.Itoa(*port))
 

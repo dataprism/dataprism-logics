@@ -3,7 +3,7 @@ package evals
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	"github.com/dataprism/dataprism-kfunc/utils"
+	"github.com/dataprism/dataprism-logics/utils"
 )
 
 type EvaluationRouter struct {
