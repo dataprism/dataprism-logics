@@ -1,5 +1,5 @@
 FROM golang:1.9
-WORKDIR /go/src/github.com/dataprism/dataprism-kfunc
+WORKDIR /go/src/github.com/dataprism/dataprism-logics
 COPY . .
 RUN go get -d -v \
   github.com/hashicorp/consul/api \
@@ -13,6 +13,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=0 /go/src/github.com/dataprism/dataprism-kfunc/app .
+COPY --from=0 /go/src/github.com/dataprism/dataprism-logics/app .
 CMD ["./app"]
 EXPOSE 6300
