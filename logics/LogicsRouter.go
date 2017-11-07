@@ -3,7 +3,7 @@ package logics
 import (
 	"net/http"
 	"github.com/gorilla/mux"
-	"../utils"
+	"github.com/dataprism/dataprism-kfunc/utils"
 	"io/ioutil"
 	"encoding/json"
 	"strconv"
