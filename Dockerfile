@@ -15,4 +15,4 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=0 /go/src/github.com/dataprism/dataprism-kfunc/app .
 CMD ["./app"]
-EXPORT 6300
+EXPOSE 6300
