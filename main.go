@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/dataprism/dataprism-logics/api"
+	"github.com/dataprism/dataprism-commons/api"
 	"github.com/dataprism/dataprism-logics/logics"
 	consul "github.com/hashicorp/consul/api"
 	nomad "github.com/hashicorp/nomad/api"
 	"github.com/sirupsen/logrus"
 	"flag"
 	"github.com/dataprism/dataprism-logics/evals"
-	"github.com/dataprism/dataprism-logics/nodes"
+	"github.com/dataprism/dataprism-commons/nodes"
 	"strconv"
 )
 
