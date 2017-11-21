@@ -92,7 +92,21 @@ func (m *LogicsManager) GetLogic(ctx context.Context, id string) (*Logic, error)
 	return &logic, nil
 }
 
-func (m *LogicsManager) GetLogicStatus(ctx context.Context, id string) (*LogicStatus, error) {
+func (m *LogicsManager) GetLogicStatus(ctx context.Context, logicId string) (*LogicStatus, error) {
+	list, err :=  m.ListLogicVersions(ctx, logicId)
+	if err != nil {
+		return nil, err
+	}
+
+	latest := 0;
+	for _, e := range list {
+		if latest < e {
+			latest = e
+		}
+	}
+
+	id := logicId + "_" + strconv.Itoa(latest)
+
 	summary, _, err := m.nomadClient.Jobs().Summary(id, &nomad.QueryOptions{})
 	if err != nil {
 		return nil, err
