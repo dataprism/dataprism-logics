@@ -2,83 +2,71 @@ package logics
 
 import (
 	"context"
-	consul "github.com/hashicorp/consul/api"
 	"encoding/json"
-	"strings"
 	"strconv"
 	nomad "github.com/hashicorp/nomad/api"
+	consul2 "github.com/dataprism/dataprism-commons/consul"
 )
 
 type LogicsManager struct {
-	client *consul.KV
+	storage *consul2.ConsulStorage
 	scheduler *Scheduler
 	nomadClient *nomad.Client
 }
 
-func NewManager(client *consul.KV, nomadClient *nomad.Client, scheduler *Scheduler) *LogicsManager {
-	return &LogicsManager{client: client, nomadClient: nomadClient, scheduler:scheduler}
+func NewManager(storage *consul2.ConsulStorage, nomadClient *nomad.Client, scheduler *Scheduler) *LogicsManager {
+	return &LogicsManager{storage: storage, nomadClient: nomadClient, scheduler:scheduler}
 }
 
-func (m *LogicsManager) ListLogics(ctx context.Context) ([]string, error) {
-	pairs, _, err := m.client.Keys("logics/", "/", &consul.QueryOptions{})
-	if err != nil {
-		return nil, err
-	} else {
-		if pairs == nil {
-			return []string{}, nil
-		}
+func (m *LogicsManager) ListLogics(ctx context.Context) ([]*Logic, error) {
+	var result []*Logic
 
-		var res []string
-		for _, p := range pairs {
-			idx := strings.Index(p, "/")
+	pairs, err := m.storage.List(ctx, "logics")
+	if err != nil { return nil, err }
 
-			if idx == -1 {
-				continue
-			}
-
-			idx2 := strings.Index(p[idx + 1:], "/")
-
-			if idx2 == -1 {
-				idx2 = len(p[idx + 1:])
-			}
-
-			res = append(res, p[idx + 1:][:idx2])
-		}
-
-		return res, nil
+	for _, p := range pairs {
+		var entity Logic
+		if err = json.Unmarshal(p.Value, &entity); err != nil { return nil, err }
+		result = append(result, &entity)
 	}
+
+	return result, err
 }
 
-func (m *LogicsManager) ListLogicVersions(ctx context.Context, id string) ([]int, error) {
-	pairs, _, err := m.client.Keys("logics/" + id + "/versions/", "/", &consul.QueryOptions{})
-	if err != nil {
-		return nil, err
-	} else {
-		if pairs == nil {
-			return []int{}, nil
-		}
+func (m *LogicsManager) ListLogicVersions(ctx context.Context, id string) ([]*LogicVersion, error) {
+	var result []*LogicVersion
 
-		var res []int
-		for _, p := range pairs {
-			idx := strings.LastIndex(p, "/")
+	pairs, err := m.storage.List(ctx, "logics/" + id + "/versions/")
+	if err != nil { return nil, err }
 
-			if idx == -1 {
-				continue
-			}
+	for _, p := range pairs {
+		var entity LogicVersion
+		if err = json.Unmarshal(p.Value, &entity); err != nil { return nil, err }
 
-			i, err := strconv.Atoi(p[idx + 1:])
-
-			if err == nil {
-				res = append(res, i)
-			}
-		}
-
-		return res, nil
+		result = append(result, &entity)
 	}
+
+	return result, err
+}
+
+func (m *LogicsManager) ListLogicVersionIds(ctx context.Context, id string) ([]int, error) {
+	var result []int
+
+	pairs, err := m.storage.List(ctx, "logics/" + id + "/versions/")
+	if err != nil { return nil, err }
+
+	for _, p := range pairs {
+		v, err := strconv.Atoi(p.Key)
+		if err != nil { return nil, err }
+
+		result = append(result, v)
+	}
+
+	return result, err
 }
 
 func (m *LogicsManager) GetLogic(ctx context.Context, id string) (*Logic, error) {
-	data, _, err := m.client.Get("logics/" + id + "/definition", &consul.QueryOptions{})
+	data, err := m.storage.Get(ctx,"logics/" + id + "/definition")
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +100,7 @@ func (m *LogicsManager) GetLogicStatus(ctx context.Context, id string) (*LogicSt
 
 func (m *LogicsManager) GetLatestLogicVersion(ctx context.Context, id string) (*LogicVersion, error) {
 	// -- determine the next logic version
-	list, err :=  m.ListLogicVersions(ctx, id)
+	list, err :=  m.ListLogicVersionIds(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +116,7 @@ func (m *LogicsManager) GetLatestLogicVersion(ctx context.Context, id string) (*
 }
 
 func (m *LogicsManager) GetLogicVersion(ctx context.Context, id string, version int) (*LogicVersion, error) {
-	data, _, err := m.client.Get("logics/" + id + "/versions/" + strconv.Itoa(version), &consul.QueryOptions{})
+	data, err := m.storage.Get(ctx, "logics/" + id + "/versions/" + strconv.Itoa(version))
 	if err != nil {
 		return nil, err
 	}
@@ -152,9 +140,7 @@ func (m *LogicsManager) SetLogic(ctx context.Context, logic *Logic) (*Logic, err
 		return nil, err
 	}
 
-	pair := &consul.KVPair{Key: "logics/" + logic.Id + "/definition", Value: data}
-
-	_, err = m.client.Put(pair, &consul.WriteOptions{})
+	err = m.storage.Set(ctx, "logics/" + logic.Id + "/definition", data)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +151,7 @@ func (m *LogicsManager) SetLogic(ctx context.Context, logic *Logic) (*Logic, err
 func (m *LogicsManager) SetLogicVersion(ctx context.Context, logicId string, logicVersion *LogicVersion) (*LogicVersion, error) {
 	if logicVersion.Version == 0 {
 		// -- determine the next logic version
-		list, err :=  m.ListLogicVersions(ctx, logicId)
+		list, err :=  m.ListLogicVersionIds(ctx, logicId)
 		if err != nil {
 			return nil, err
 		}
@@ -185,9 +171,7 @@ func (m *LogicsManager) SetLogicVersion(ctx context.Context, logicId string, log
 		return nil, err
 	}
 
-	pair := &consul.KVPair{Key: "logics/" + logicId + "/versions/" + strconv.Itoa(logicVersion.Version), Value: data}
-
-	_, err = m.client.Put(pair, &consul.WriteOptions{})
+	err = m.storage.Set(ctx, "logics/" + logicId + "/versions/" + strconv.Itoa(logicVersion.Version), data)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +180,7 @@ func (m *LogicsManager) SetLogicVersion(ctx context.Context, logicId string, log
 }
 
 func (m *LogicsManager) RemoveLogic(ctx context.Context, id string) (error) {
-	list, err := m.ListLogicVersions(ctx, id)
+	list, err := m.ListLogicVersionIds(ctx, id)
 
 	for _, v := range list {
 		if err = m.RemoveLogicVersion(ctx, id, v); err != nil {
@@ -204,9 +188,7 @@ func (m *LogicsManager) RemoveLogic(ctx context.Context, id string) (error) {
 		}
 	}
 
-	_, err = m.client.DeleteTree("logics/" + id, &consul.WriteOptions{})
-
-	return err
+	return m.storage.Remove(ctx, "logics/" + id)
 }
 
 func (m *LogicsManager) RemoveLogicVersion(ctx context.Context, id string, version int) (error) {
@@ -220,9 +202,7 @@ func (m *LogicsManager) RemoveLogicVersion(ctx context.Context, id string, versi
 			return err
 		}
 	}
-	_, err = m.client.Delete("logics/" + id + "/versions/" + strconv.Itoa(version), &consul.WriteOptions{})
-
-	return err
+	return m.storage.Remove(ctx, "logics/" + id + "/versions/" + strconv.Itoa(version))
 }
 
 func (m *LogicsManager) Schedule(ctx context.Context, id string, version int) (*ScheduleResponse, error) {
