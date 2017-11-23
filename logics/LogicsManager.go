@@ -6,6 +6,7 @@ import (
 	"strconv"
 	nomad "github.com/hashicorp/nomad/api"
 	consul2 "github.com/dataprism/dataprism-commons/consul"
+	"strings"
 )
 
 type LogicsManager struct {
@@ -56,7 +57,8 @@ func (m *LogicsManager) ListLogicVersionIds(ctx context.Context, id string) ([]i
 	if err != nil { return nil, err }
 
 	for _, p := range pairs {
-		v, err := strconv.Atoi(p.Key)
+		i := strings.LastIndex(p.Key, "/") + 1
+		v, err := strconv.Atoi(p.Key[i:])
 		if err != nil { return nil, err }
 
 		result = append(result, v)
@@ -88,8 +90,8 @@ func (m *LogicsManager) GetLogicStatus(ctx context.Context, logicId string) (*Lo
 
 	latest := 0;
 	for _, e := range list {
-		if latest < e {
-			latest = e
+		if latest < e.Version {
+			latest = e.Version
 		}
 	}
 
