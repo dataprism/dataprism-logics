@@ -10,6 +10,7 @@ import (
 	"github.com/dataprism/dataprism-logics/evals"
 	"github.com/dataprism/dataprism-commons/nodes"
 	"strconv"
+	Nconsul2 "github.com/dataprism/dataprism-commons/consul"
 )
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
 		logrus.Error(err)
 	}
 
+	storage := Nconsul2.NewStorage(client)
+
 	nomadClient, err := nomad.NewClient(nomad.DefaultConfig())
 	if err != nil {
 		logrus.Error(err)
@@ -31,23 +34,25 @@ func main() {
 	scheduler := logics.NewScheduler(nomadClient, *jobsDir)
 
 	// -- Profile Providers
-	logicsManager := logics.NewManager(client.KV(), nomadClient, scheduler)
+	logicsManager := logics.NewManager(storage, nomadClient, scheduler)
 	logicsRouter := logics.NewRouter(logicsManager)
 	API.RegisterGet("/v1/logics", logicsRouter.ListLogics)
+	API.RegisterPost("/v1/logics", logicsRouter.SetLogic)
+
 	API.RegisterGet("/v1/logics/{id}", logicsRouter.GetLogic)
+	API.RegisterDelete("/v1/logics/{id}", logicsRouter.RemoveLogic)
+
 	API.RegisterGet("/v1/logics/{id}/status", logicsRouter.GetLogicStatus)
+
 	API.RegisterGet("/v1/logics/{id}/versions", logicsRouter.ListLogicVersions)
+	API.RegisterPost("/v1/logics/{id}/versions", logicsRouter.SetLogicVersion)
+
 	API.RegisterGet("/v1/logics/{id}/versions/latest", logicsRouter.GetLatestLogicVersion)
 	API.RegisterGet("/v1/logics/{id}/versions/{version}", logicsRouter.GetLogicVersion)
+	API.RegisterDelete("/v1/logics/{id}/versions/{version}", logicsRouter.RemoveLogicVersion)
 
 	API.RegisterPost("/v1/logics/{id}/versions/{version}/schedule", logicsRouter.Schedule)
 	API.RegisterDelete("/v1/logics/{id}/versions/{version}/schedule", logicsRouter.Unschedule)
-
-	API.RegisterPost("/v1/logics", logicsRouter.SetLogic)
-	API.RegisterPost("/v1/logics/{id}/versions", logicsRouter.SetLogicVersion)
-
-	API.RegisterDelete("/v1/logics/{id}", logicsRouter.RemoveLogic)
-	API.RegisterDelete("/v1/logics/{id}/versions/{version}", logicsRouter.RemoveLogicVersion)
 
 	evaluationManager := evals.NewManager(nomadClient)
 	evaluationRouter := evals.NewRouter(evaluationManager)
