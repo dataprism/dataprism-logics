@@ -48,7 +48,7 @@ func (s *LogicJob) ToJavascriptJob(logic *Logic) (*api.Job, error) {
 	}
 
 	// -- generate the application file
-	if ioutil.WriteFile(jobDir + "/app.js", data, 0777); err != nil {
+	if ioutil.WriteFile(jobDir + "/index.js", data, 0777); err != nil {
 		return nil, err
 	}
 
@@ -57,14 +57,26 @@ func (s *LogicJob) ToJavascriptJob(logic *Logic) (*api.Job, error) {
 	task := api.NewTask(nomadJobId, "docker")
 
 	task.Config = make(map[string]interface{})
-	task.Config["image"] = "node:8"
-	task.Config["command"] = "node"
-	task.Config["args"] = []string{"app.js"}
+	task.Config["image"] = "dataprism/dataprism-ldk-nodejs"
 	task.Config["volumes"] = []string{ jobDir + ":/usr/src/app" }
 	task.Config["work_dir"] = "/usr/src/app"
 	task.Env = make(map[string]string)
+
+	if logic.Libraries != nil && len(logic.Libraries) > 0 {
+		task.Env["DP_LIBRARIES"] = strings.Join(logic.Libraries, ",")
+	}
+
 	task.Meta = make(map[string]string)
-	task.Resources = DefaultSyncJobResources()
+
+	if logic.Resources != nil {
+		task.Resources = &api.Resources{
+			CPU:      logic.Resources.CPU,
+			MemoryMB: logic.Resources.Memory,
+			DiskMB:   logic.Resources.Disk,
+		}
+	} else {
+		task.Resources = DefaultSyncJobResources()
+	}
 
 	taskGroup := api.NewTaskGroup("logics", 1)
 	taskGroup.Tasks = []*api.Task{task}
