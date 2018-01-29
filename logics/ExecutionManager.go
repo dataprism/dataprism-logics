@@ -23,7 +23,7 @@ func (m *ExecutionManager) Deploy(ctx context.Context, id string) (*execute.Sche
 	}
 
 	// -- create the job for the link
-	job := &LogicJob{logic, m.platform}
+	job := NewLogicJob(logic, m.platform)
 
 	// -- schedule the job
 	return m.platform.Scheduler.Schedule(job)

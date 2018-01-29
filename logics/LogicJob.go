@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"encoding/base64"
 	"github.com/dataprism/dataprism-commons/core"
+	"github.com/dataprism/dataprism-commons/execute"
 )
 
 type LogicJob struct {
@@ -25,8 +26,8 @@ func DefaultSyncJobResources() *api.Resources {
 	}
 }
 
-func NewSyncJob(logic *Logic, platform *core.Platform) LogicJob {
-	return LogicJob{logic, platform }
+func NewLogicJob(logic *Logic, platform *core.Platform) execute.DataprismJob {
+	return &LogicJob{logic, platform }
 }
 
 func (s *LogicJob) ToJob() (*api.Job, error) {
@@ -48,7 +49,7 @@ func (s *LogicJob) ToJavascriptJob(logic *Logic) (*api.Job, error) {
 	}
 
 	// -- generate the application file
-	if ioutil.WriteFile(jobDir + "/index.js", data, 0777); err != nil {
+	if err = ioutil.WriteFile(jobDir + "/index.js", data, 0777); err != nil {
 		return nil, err
 	}
 
@@ -60,6 +61,7 @@ func (s *LogicJob) ToJavascriptJob(logic *Logic) (*api.Job, error) {
 	task.Config["image"] = "dataprism/dataprism-ldk-nodejs"
 	task.Config["volumes"] = []string{ jobDir + ":/usr/src/app" }
 	task.Config["work_dir"] = "/usr/src/app"
+	task.Config["command"] = "/run.sh"
 	task.Env = make(map[string]string)
 
 	if logic.Libraries != nil && len(logic.Libraries) > 0 {
